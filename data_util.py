@@ -22,7 +22,7 @@ class TextCleaner(object):
     '''
      text cleaner instance
      clean raw text for both vocab and sentence match model
-     tokenization -> stop words removal
+     a full process includes segmentation(tokenizing) stop-word removal, number and proper noun processing
     '''
     def __init__(self, text_path):
         self.text_path = text_path
@@ -44,7 +44,7 @@ class TextCleaner(object):
     def clean_doc(self, doc_path, use_cached):
         '''
          clean the document provided
-         a full process includes segmentation, tokenizing, stop-word removal, number and proper noun processing
+         a full process includes segmentation(tokenizing) stop-word removal, number and proper noun processing
          for data streaming use
          return a piece of cleaned text
         '''
@@ -56,49 +56,61 @@ class TextCleaner(object):
         '''
         
         return
-    
-    def clean_chn_text_2file(self, save_path, stop_set):
+    def clean_chn_line(self, line_raw_utf8, stop_set):
+        '''
+         given a string of Chinese
+         return a list of clean version of the string
+        '''
+        line = line_raw_utf8
+        line_seg = []
+        
+        # replace punctuation with spacing to make separate items remain separated
+        if self.punc_rmvl:
+            line = re.sub("[][！？。｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#$%&\'()*+,-./:;<=>?@\\\^_`{|}~\s\t]+", " ", line)
+        
+        # further cleaning including segmentation, number removal
+        if self.ling_unit == "WORD": # seg the text by word
+            for w in jieba.cut(line):
+                if(w != " " and w not in stop_set):
+                    # make numbers zeroes
+                    if self.num_rmvl:
+                        word = self._remove_digit(w)
+                    else:
+                        word = w
+                    line_seg.append(word)
+                else: pass # stop word or spacing
+        else: # CHAR as linguistic unit
+            for ch in line:
+                if(ch != " " and ch not in stop_set):
+                    # make numbers zeroes
+                    if self.num_rmvl:
+                        char_ = self._remove_digit(ch)
+                    else:
+                        char_ = ch
+                        
+                    line_seg.append(char_)
+                else: pass # spacing
+                
+        return line_seg
+            
+                    
+    def clean_hitnlp_instance(self, qa_tuple, mode, stopset):
+        pass
+    def clean_chn_corpus_2file(self, save_path, stop_set):
         # s_w_rmvl = cfg.PreProcessConfig.STOP_WORD_REMOVAL
         f = open(self.text_path, 'rb') # use 'rb' mode for windows decode problem
         f_w = open(save_path, 'wb')
         # start to clean each line
         for l in f:
             line = l.decode("utf-8")
-            # remove punctualation
-            if self.punc_rmvl:
-                # replace punctuation with spacing
-                # to make separate items remain separated
-                line = re.sub("[][！？。｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#$%&\'()*+,-./:;<=>?@\\\^_`{|}~\s\t]+", " ", line)
-            # segmentation based on word or char
-            line_seg = []
-            if self.ling_unit == "WORD": # seg the text by word
-                for w in jieba.cut(line):
-                    if(w != " " and w not in stop_set):
-                        
-                        # make all number zero
-                        if self.num_rmvl:
-                            word = self._remove_digit(w)
-                        else:
-                            word = w
-                        
-                        line_seg.append(word)
-            else: # seg the text by char
-                for ch in line:
-                    if(ch != " " and ch not in stop_set):
-                        
-                        # make all number zero
-                        if self.num_rmvl:
-                            char_ = self._remove_digit(ch)
-                        else:
-                            char_ = ch
-                            
-                        line_seg.append(char_)
-            print(line_seg)
+            
+            line_seg = self.clean_chn_line(line, stop_set)
+            
             if len(line_seg) == 0:
                 continue
+            
             f_w.write(' '.join(line_seg).encode("utf-8"))
             f_w.write(' '.encode("utf-8"))
-            
             
         f.close()
         f_w.close()
@@ -205,11 +217,17 @@ class Vocab(object):
         # initialize a empty word matrix 
         # zero vector is the last row
         self.word_matrix = np.zeros((self.vocab_size + 1, self.wdim), 
-                                    dtype = np.float32)
+                                    dtype = np.float32
+                                    )
         for cur_idx in range(self.vocab_size):
             self.word_matrix[cur_idx] = vector_list[cur_idx] # each row is a word vector
             
         print('Word vectors successfully loaded. Now saving to database...')
+        
+        try:
+            os.remove(self.wv_path)
+        except FileNotFoundError:
+            pass
         
         conn = sqlite3.connect(self.wv_path)
         c = conn.cursor()
@@ -311,13 +329,16 @@ class Vocab(object):
         # initialize a empty word matrix 
         # zero vector is the last row
         self.word_matrix = np.zeros((self.vocab_size + 1, self.wdim), 
-                                    dtype = np.float32)
+                                    dtype = np.float32
+                                    )
         for cur_idx in range(self.vocab_size):
             self.word_matrix[cur_idx] = vector_list[cur_idx] # each row is a word vector
             
+            '''
             if cur_idx % 20 == 0:
                 print("%d: %s" % (cur_idx, self.idx2word[cur_idx].decode("utf-8")))
                 print(self.word_matrix[cur_idx])
+            '''
         
         
     def has_word(self, word):
@@ -404,6 +425,13 @@ class Vocab(object):
             idx_sequence.append(idx)
         
         return idx_sequence
+    def get_word_dimensionality(self):
+        return self.wdim
+    
+    def get_zero_vec_idx(self):
+        # in vector matrix the last row was set to zeroes
+        # the index of the vsize+1th row is vsize
+        return self.vocab_size
 
 class SentenceDataStream(object):
     '''
@@ -416,63 +444,160 @@ class SentenceDataStream(object):
          batches: iterator? of data to be sent into the model
          batch_span: list of tuples pointing positions of each batch in instance list
     '''
-    def __init__(self, clean_qa_file_path, vocab, mode):
+    def __init__(self, qa_file_path, vocab, batch_size, mode):
         '''
          read question answer pair file and save qa pairs into memory
          mode: a tuple of dataset name and train/evaluation mode, e.g. ('HITNLP', 't')
         '''
         
-        qa_data_mode = mode[0]
-        t_e_mode = mode[1]
-        assert qa_data_mode in cfg.ModelConfig.SUPPORTED_DATASET
-        assert t_e_mode in ('t', 'e')
+        self.qa_data_mode = mode[0]
+        self.t_e_mode = mode[1]
+        assert self.qa_data_mode in cfg.ModelConfig.SUPPORTED_DATASET
+        assert self.t_e_mode in ('t', 'e')
+        self.vocab = vocab
+        self.text_cleaner = TextCleaner(qa_file_path)
         
-        to_sort = cfg.ModelConfig.SORT_INSTANCE
+        self.instances = [] # each instance consists of word idx seqs of q, a and label if in 't' mode 
+        self.instance_size = 0
+        self.batch_size = batch_size
+        self.batch_span = [] # tuples recording start and end index in instance of each batch
+        self.q_idx_matrix_batches = [] # matrix consists of padded sequence of indices
+        self.a_idx_matrix_batches = []
+        self.label_batch = []
         
-        self.instances = []
-        self.t_e_mode = t_e_mode
-        self.batch_span = []
-        self.q_batch_lst = []
-        self.a_batch_lst = []
-        self.label_batch_lst = []
-        
-        f = (open(clean_qa_file_path, 'rb'))
-        
-        if qa_data_mode == 'HITNLP':
-            for line in f:
-                line_item = line.split('\t')
-                q = line_item[0]
-                a = line_item[1]
-                if t_e_mode == 't':
-                    label = int(line_item[2])
-                q_idx_seq = vocab.to_idx_sequence(q.split(' '))
-                a_idx_seq = vocab.to_idx_sequence(q.split(' '))
-                if t_e_mode == 't':
-                    self.instance.append((q_idx_seq, a_idx_seq, label))
-                else:
-                    self.instance.append((q_idx_seq, a_idx_seq)) # in evaluation mode results are generated by model and saved later
+        if self.qa_data_mode == 'HITNLP':
+            self._prepare_HITNLP_data(qa_file_path)
         else:
-            pass # other dataset in different format
+            pass
         
+    def _prepare_HITNLP_data(self, qa_file_path):
+        '''
+         make data stream based on qa file
+         this process first reads instances line by line and clean them
+         then the text are translated to the form of word indices
+         so that the data set is ready to generate data stream to the model
+        '''
+        s_w_rmvl = cfg.PreProcessConfig.STOP_WORD_REMOVAL
+        stop_set = set([])
+        if s_w_rmvl:
+            stop_set = self.vocab.get_stop_word_set()
+            
+        to_sort = cfg.ModelConfig.SORT_INSTANCE
+        max_sent_len = cfg.ModelConfig.MAX_SENT_LEN
+        
+        f = (open(qa_file_path, 'rb'))
+        
+        for l in f:
+            line = l.decode('utf-8')
+            line_item = line.split('\t')
+            q_raw = line_item[0]
+            a_raw = line_item[1]
+            if self.t_e_mode == 't':
+                label = int(line_item[2])
+            # clean qa pair sentence
+            q_seg = self.text_cleaner.clean_chn_line(q_raw, stop_set)
+            a_seg = self.text_cleaner.clean_chn_line(a_raw, stop_set)
+            # translate word to word indices
+            q_idx_seq = self.vocab.to_idx_sequence(q_seg)
+            a_idx_seq = self.vocab.to_idx_sequence(a_seg)
+            if self.t_e_mode == 't':
+                self.instance.append((q_idx_seq, a_idx_seq, label))
+            else:
+                self.instance.append((q_idx_seq, a_idx_seq)) # in evaluation mode results are generated by model and saved later
+        
+        self.instance_size = len(self.instances)
+        
+        f.close()
+        
+        """check if index sequence of dataset is a correct match"""
         # sort instances
         if to_sort:
             self.instances = sorted(self.instances, key = lambda instances: (len(instances[0]), len(instances[1])))
         """ does variable length affects performance of convolution filter? """
-        # make batches
-        
+        # make batch idx
+        self.batch_span = self.make_patch_span(self.batch_size, self.instance_size)
+        # make batch content in terms of word idx
+        for (batch_start, batch_end) in self.batch_span:
+            q_idx_seq_lst = []
+            a_idx_seq_lst = []
+            if self.t_e_mode == 't':
+                label_lst = []
+            for i in range(batch_start, batch_end):
+                q_idx_seq_lst.append(self.instances[i][0]) # element: a sequence of word indices
+                a_idx_seq_lst.append(self.instances[i][1])
+                if self.t_e_mode == 't':
+                    label_lst.append(self.instances[i][2])
+            # padding
+            q_len_lst = [len(seq) for seq in q_idx_seq_lst]
+            a_len_lst = [len(seq) for seq in a_idx_seq_lst]
+            max_q_len = min(max_sent_len, max(q_len_lst))
+            max_a_len = min(max_sent_len, max(a_len_lst))
+            
+            (padded_q_idx_seq_lst, p_q_s_len) = self._pad(q_idx_seq_lst, max_q_len)
+            (padded_a_idx_seq_lst, p_a_s_len) = self._pad(a_idx_seq_lst, max_a_len)
+            """check if the padded sequences have the same lenth, both for wide pad and not"""
+            batch_size = batch_end - batch_start
+            q_batch = np.zeros((batch_size, p_q_s_len),
+                               dtype = np.int32
+                               )
+            a_batch = np.zeros((batch_size, p_a_s_len),
+                               dtype = np.int32
+                               )
+            for i in range(batch_size):
+                q_batch[i] = np.array(padded_q_idx_seq_lst[i], dtype=np.int32)
+                a_batch[i] = np.array(padded_a_idx_seq_lst[i], dtype=np.int32)
+            """check if padded sequences are converted to np matrix, both for wide pad and not"""
+            self.q_idx_matrix_batches.append(q_batch)
+            self.a_idx_matrix_batches.append(a_batch)
+            
+            
+            
+            
+            
+            
+                
     def make_patch_span(self, batch_size, instance_size):
+        '''record index of each batch'''
         batch_span = []
         batch_num = int(np.ceil(float(instance_size) / float(batch_size)))
         for i in range(batch_num):
             batch_span.append((i * batch_size, min(instance_size, (i+1)*batch_size)))
         return batch_span
-
-
-
-
-
-def clean_chn_words(word):
-    pass
+    
+    def get_batch(self):
+        '''a generator generates data to feed into the model directly'''
+        batch_num = 0
+        batch_span = self.batch_span
+        for (batch_start, batch_end) in batch_span:
+            
+            batch_num += 1
+            
+    def _pad(self, idx_seq_lst, max_seq_len):
+        '''
+         pad sequences in the list to the max length
+         return a tuple: (padded index-sequence list, index-sequence length)
+        '''
+        zero_vec_idx = self.vocab.get_zero_vec_idx()
+        pad_wide = cfg.ModelConfig.PAD_WIDE
+        conv_filter_len = cfg.ModelConfig.CONV_FILTER_LEN # m gram
+        padded_idx_seq_lst = []
+        padded_idx_seq_len = max_seq_len
+        if pad_wide:
+            padded_idx_seq_len = max_seq_len + 2 * (conv_filter_len - 1)
+        for idx_seq in idx_seq_lst:
+            padded_idx_seq = idx_seq
+            if len(idx_seq) < max_seq_len: # to pad
+                padded_idx_seq = idx_seq + [zero_vec_idx for _ in range(max_seq_len-len(idx_seq))]
+            elif len(idx_seq) > max_seq_len: # to truncate
+                padded_idx_seq = idx_seq[:max_seq_len]
+            
+            if pad_wide:
+                add_pad_seq = [zero_vec_idx for _ in range(conv_filter_len-1)]
+                padded_idx_seq[0:0] = add_pad_seq # front padding
+                padded_idx_seq.extend(add_pad_seq) # rear padding
+            
+            padded_idx_seq_lst.append(padded_idx_seq)
+        return (padded_idx_seq_lst, padded_idx_seq_len)
 
 def write_log(log_str):
     log_dir = cfg.DirConfig.LOG_DIR

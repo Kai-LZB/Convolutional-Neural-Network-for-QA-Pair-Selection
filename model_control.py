@@ -43,11 +43,9 @@ def exec_(param):
     eval_set = param['model_mode'].eval_set
     qa_data_path_t = cfg.DirConfig.QA_DATA_PATH_DICT[qa_data_mode][train_set]
     qa_data_path_e = cfg.DirConfig.QA_DATA_PATH_DICT[qa_data_mode][eval_set]
-    clean_qa_data_path_t = cfg.DirConfig.CLEAN_QA_DATA_PATH_DICT[qa_data_mode][train_set]
-    clean_qa_data_path_e = cfg.DirConfig.CLEAN_QA_DATA_PATH_DICT[qa_data_mode][eval_set]
     
     vocab = du.Vocab(wv_path)
-    
+    stop_set = set([])
     # decide whether to train new word embedding vectors
     if(not use_preprocessed and train_wv): # train new vectors using corpus
         # clean the corpus text
@@ -58,10 +56,8 @@ def exec_(param):
         # load stop word list into text cleaner if needed
         if s_w_rmvl:
             stop_set = vocab.get_stop_word_set()
-        else:
-            stop_set = set([])
         
-        text_cleaner.clean_chn_text_2file(clean_corpus_path, stop_set)
+        text_cleaner.clean_chn_corpus_2file(clean_corpus_path, stop_set)
         
         # copy cleaned text to word2vec directory
         clean_corpus_filename = cfg.DirConfig.CLEAN_CORPUS_FILENAME_DICT[corpus_mode]
@@ -77,22 +73,23 @@ def exec_(param):
      data stream initiates unknown-word mapping
      so beware of deadlock in database operation
     '''
-        
+    """  
     # clean question-answer pair text
     if(train_set != 'NAH' and not use_preprocessed):
-        text_cleaner = du.TextCleaner(qa_data_path_t, stop_set)
+        text_cleaner = du.TextCleaner(qa_data_path_t)
         text_cleaner.clean_chn_text_2file(clean_qa_data_path_t, stop_set)
     if(eval_set != 'NAH' and not use_preprocessed):
-        text_cleaner = du.TextCleaner(qa_data_path_e, stop_set)
+        text_cleaner = du.TextCleaner(qa_data_path_e)
         text_cleaner.clean_chn_text_2file(clean_qa_data_path_e, stop_set)
     
     '''training and evaluating model'''
     if train_set != 'NAH': # start training
         data_stream = du.SentenceDataStream(clean_qa_data_path_t, vocab, (qa_data_mode, 't'))
+        
     if  eval_set != 'NAH': # start evaluating
         data_stream = du.SentenceDataStream(clean_qa_data_path_e, vocab, (qa_data_mode, 'e'))
     
-        
+    """
     '''
     sentence = ["狐狸", "吃", "apple"]    
     idx_seq = vocab.to_idx_sequence(sentence)
@@ -109,6 +106,14 @@ def exec_(param):
     '''
     
     write_log("Finished.\n")
-        
+    
+def generate_paths(qa_data_mode, ling_unit, s_w_rmvl):
+    '''
+     generate a tuple of paths needed
+     including corpus path, cleaned corpus path, vector database path,
+     training data path, evaluation data path
+    pass
+    '''
+    pass
     
 

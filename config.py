@@ -30,8 +30,8 @@ class DirConfig(object):
                              }
     QA_DATA_PATH_DICT = {'HITNLP': {'DEV': DATA_RAW_DIR + 'develop.data', 'TRAIN': DATA_RAW_DIR + 'training.data', 'TEST': DATA_RAW_DIR + 'randomed_labeled_testing.data', 'NAH': ''},
                          }
-    CLEAN_QA_DATA_PATH_DICT = {'HITNLP': {'DEV': DATA_CACHED_DIR + 'develop.data', 'TRAIN': DATA_CACHED_DIR + 'training.data', 'TEST': DATA_CACHED_DIR + 'randomed_labeled_testing.data', 'NAH': ''},
-                               }
+    #CLEAN_QA_DATA_PATH_DICT = {'HITNLP': {'DEV': DATA_CACHED_DIR + 'develop.data', 'TRAIN': DATA_CACHED_DIR + 'training.data', 'TEST': DATA_CACHED_DIR + 'randomed_labeled_testing.data', 'NAH': ''},
+    #                           }
     WV_FILE_SUFFIX = 'vec.db'
     EXT_TOOL_DIR = '../ext_tool/'
     LOG_DIR = '../log/'
@@ -72,3 +72,9 @@ class ModelConfig(object):
     WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200}
     
     SORT_INSTANCE = True
+    PAD_WIDE = True
+    # Network config
+    FEATURE_MAP_NUM = 100
+    CONV_FILTER_LEN = 5
+    MAX_SENT_LEN = 300
+    

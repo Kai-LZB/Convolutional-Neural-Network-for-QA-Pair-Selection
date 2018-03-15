@@ -19,7 +19,7 @@ class DataMode():
              
     '''
     def __init__(self):
-        self.qa_data = "CHN_TEST" # 'HITNLP', 'ENG_TEST', 'CHN_TEST'
+        self.qa_data = "HITNLP" # 'HITNLP', 'ENG_TEST', 'CHN_TEST'
         
 
 class PreprocessMode():
@@ -43,7 +43,7 @@ class PreprocessMode():
          
     '''
     def __init__(self):
-        self.train_wv = False # only matters when ModelMode.use_preprocessed is False
+        self.train_wv = True # only matters when ModelMode.use_preprocessed is False
 
 class ModelMode():
     '''
