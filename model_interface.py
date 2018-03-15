@@ -43,7 +43,7 @@ class PreprocessMode():
          
     '''
     def __init__(self):
-        self.train_wv = True # only matters when ModelMode.use_preprocessed is False
+        self.train_wv = False # decides whether to train new vectors
 
 class ModelMode():
     '''
@@ -68,7 +68,6 @@ class ModelMode():
     '''
     def __init__(self):
         # most commonly used setting
-        self.use_preprocessed = False # only use True when all pre-processing are done in advance 
         self.use_trained = False
         self.train_set = "DEV"
         self.eval_set = "DEV"

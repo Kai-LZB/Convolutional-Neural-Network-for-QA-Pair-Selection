@@ -71,10 +71,12 @@ class ModelConfig(object):
     SUPPORTED_DATASET = set(['HITNLP', 'TREC'])
     WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200}
     
-    SORT_INSTANCE = True
+    SORT_INSTANCE = False
     PAD_WIDE = True
-    # Network config
+    # network config
     FEATURE_MAP_NUM = 100
     CONV_FILTER_LEN = 5
     MAX_SENT_LEN = 300
+    # train config
+    BATCH_SIZE = 32
     
