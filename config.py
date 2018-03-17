@@ -15,16 +15,16 @@ class DirConfig(object):
     # HITNLP_WV_PATH = DATA_DIR + 'HITNLP' + '_w' + 'vec.db'
     CORPUS_PATH_DICT = {'CHN_PEOPLE_S_DAILY': DATA_RAW_DIR + '------',
                    'ENG_TEST': DATA_RAW_DIR + 'text8',
-                   'CHN_TEST': DATA_RAW_DIR + 'test_chn.txt',
+                   'CHN_TEST': DATA_RAW_DIR + 'test_chn_corpus',
                    }
     CLEAN_CORPUS_PATH_DICT = {'CHN_PEOPLE_S_DAILY': DATA_CACHED_DIR + '------',
                          'ENG_TEST': DATA_CACHED_DIR + 'text8_clean',
-                         'CHN_TEST': DATA_CACHED_DIR + 'test_chn_clean.txt',
+                         'CHN_TEST': DATA_CACHED_DIR + 'test_chn_corpus_clean',
                          }
     # for cc path in word2vec directory, see dst_corpus_path in model_control module, exec_ function
     CLEAN_CORPUS_FILENAME_DICT = {'CHN_PEOPLE_S_DAILY': '------',
                              'ENG_TEST': 'text8_clean',
-                             'CHN_TEST': 'test_chn_clean.txt',
+                             'CHN_TEST': 'test_chn_corpus_clean',
                              }
     QA_DATA_FILENAME_DICT = {'HITNLP': {'DEV': 'develop.data', 'TRAIN': 'training.data', 'TEST': 'randomed_labeled_testing.data', 'NAH': ''},
                              }
@@ -32,6 +32,8 @@ class DirConfig(object):
                          }
     #CLEAN_QA_DATA_PATH_DICT = {'HITNLP': {'DEV': DATA_CACHED_DIR + 'develop.data', 'TRAIN': DATA_CACHED_DIR + 'training.data', 'TEST': DATA_CACHED_DIR + 'randomed_labeled_testing.data', 'NAH': ''},
     #                           }
+    MODEL_WEIGHTS_DIR = DATA_DIR + 'my_model_weights.h5'
+    PREDICTED_SCORE_DIR = DATA_RAW_DIR + 'predicted.score'
     WV_FILE_SUFFIX = 'vec.db'
     EXT_TOOL_DIR = '../ext_tool/'
     LOG_DIR = '../log/'
@@ -54,7 +56,7 @@ class PreProcessConfig(object):
     LING_UNIT = "WORD" # "WORD" and "CHAR" 
     # text cleaning
     PUNCTUALATION_REMOVAL = True
-    STOP_WORD_REMOVAL = True # only matters in word mode
+    STOP_WORD_REMOVAL = False # only matters in word mode
     NUMBER_REMOVAL = True
     # w2v training
     # for WORD_DIM see ModelConfig
@@ -63,10 +65,7 @@ class PreProcessConfig(object):
     W2V_ITER = 15
     W2V_NEG_SAMP = 25
     W2V_HIER_SFTMX = 0
-    
-    
-    
-    
+
 class ModelConfig(object):
     SUPPORTED_DATASET = set(['HITNLP', 'TREC'])
     WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200}
@@ -78,5 +77,8 @@ class ModelConfig(object):
     CONV_FILTER_LEN = 5
     MAX_SENT_LEN = 300
     # train config
-    BATCH_SIZE = 32
+    BATCH_SIZE = 50
+    TRAIN_EPOCH = 10
+    LOSS_FUNC = 'binary_crossentropy'
+    OPT = 'adadelta'
     

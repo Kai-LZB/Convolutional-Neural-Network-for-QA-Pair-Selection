@@ -68,9 +68,10 @@ class ModelMode():
     '''
     def __init__(self):
         # most commonly used setting
-        self.use_trained = False
-        self.train_set = "DEV"
-        self.eval_set = "DEV"
+        self.use_saved_4_training = True
+        self.use_saved_4_testing = True
+        self.train_set = "NAH"
+        self.eval_set = "TRAIN"
         
 
 if __name__ == '__main__':

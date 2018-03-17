@@ -24,6 +24,20 @@ class TextCleaner(object):
      clean raw text for both vocab and sentence match model
      a full process includes segmentation(tokenizing) stop-word removal, number and proper noun processing
     '''
+    
+    '''
+     clean the document provided
+     a full process includes segmentation(tokenizing) stop-word removal, number and proper noun processing
+     for data streaming use
+     return a piece of cleaned text
+    '''
+    # for w2v training & model
+    # save both to cached & w2v dir
+    
+    '''
+     for english, we need to lowercase all letters and lemmatize words
+    '''
+    
     def __init__(self, text_path):
         self.text_path = text_path
         self.ling_unit = cfg.PreProcessConfig.LING_UNIT
@@ -31,31 +45,7 @@ class TextCleaner(object):
         self.punc_rmvl = cfg.PreProcessConfig.PUNCTUALATION_REMOVAL
         self.s_w_rmvl = cfg.PreProcessConfig.STOP_WORD_REMOVAL
         self.num_rmvl = cfg.PreProcessConfig.NUMBER_REMOVAL
-        #to_lemmatize?
-        #to tokenize
         
-    
-    def next_sentence(self):
-        pass
-    
-    def unk_mapping(self, vocab):
-        pass
-    
-    def clean_doc(self, doc_path, use_cached):
-        '''
-         clean the document provided
-         a full process includes segmentation(tokenizing) stop-word removal, number and proper noun processing
-         for data streaming use
-         return a piece of cleaned text
-        '''
-        # for w2v training & model
-        # save both to cached & w2v dir
-        
-        '''
-         for english, we need to lowercase all letters
-        '''
-        
-        return
     def clean_chn_line(self, line_raw_utf8, stop_set):
         '''
          given a string of Chinese
@@ -92,12 +82,8 @@ class TextCleaner(object):
                 else: pass # spacing
                 
         return line_seg
-            
-                    
-    def clean_hitnlp_instance(self, qa_tuple, mode, stopset):
-        pass
+    
     def clean_chn_corpus_2file(self, save_path, stop_set):
-        # s_w_rmvl = cfg.PreProcessConfig.STOP_WORD_REMOVAL
         f = open(self.text_path, 'rb') # use 'rb' mode for windows decode problem
         f_w = open(save_path, 'wb')
         # start to clean each line
@@ -275,7 +261,7 @@ class Vocab(object):
         conn.close()
         
     
-    def load_wv_from_db(self):
+    def load_wv_from_db(self, qa_data_mode):
         '''
          Load pre-trained word vectors from database
          WORD_VECTORS:
@@ -297,9 +283,11 @@ class Vocab(object):
         
         # get word dimensionality
         c.execute("SELECT * FROM VECTOR_DIMENSIONALITY")
-        (wdim, ) = c.fetchone()
+        (wdim_read, ) = c.fetchone()
         assert c.fetchone() == None
-        self.wdim = wdim
+        wdim = cfg.ModelConfig.WORD_DIM_DICT[qa_data_mode]
+        assert wdim == wdim_read
+        self.wdim = wdim_read
         
         # get vocab size
         c.execute("SELECT * FROM VOCABULARY_SIZE")
@@ -324,7 +312,7 @@ class Vocab(object):
             
         conn.close()
         
-        self.vocab_size = widx
+        assert self.vocab_size == widx
         
         # initialize a empty word matrix 
         # zero vector is the last row
@@ -344,6 +332,9 @@ class Vocab(object):
     def has_word(self, word):
         ret = word in self.word2idx
         return ret
+    
+    def get_vector_by_index(self, index):
+        return self.word_matrix[index]
     
     def get_um(self):
         # for testing
@@ -368,6 +359,7 @@ class Vocab(object):
             sim_word = self.idx2word[sim_idx]
             # store oov word mapping
             self.__unk_mapping[oov_word] = sim_word
+            '''
             # save mapping res in db
             conn = sqlite3.connect(self.wv_path)
             c = conn.cursor()
@@ -375,7 +367,15 @@ class Vocab(object):
             c.execute(ist_val_command, (oov_word, sim_word))
             conn.commit()
             conn.close()
+            '''
         return sim_word
+    
+    def save_unk_word_2_db(self):
+        '''
+         should be called every time all data streams being generated
+        '''
+        conn = sqlite3.connect(self.wv_path)
+        conn.close()
     
     def load_stop_word_set(self):
         stop_set = set([])
@@ -463,7 +463,7 @@ class SentenceDataStream(object):
         self.batch_span = [] # tuples recording start and end index in instance of each batch
         self.q_idx_matrix_batches = [] # matrix consists of padded sequence of indices
         self.a_idx_matrix_batches = []
-        self.label_batch = []
+        self.label_batches = []
         
         if self.qa_data_mode == 'HITNLP':
             self._prepare_HITNLP_data(qa_file_path)
@@ -549,7 +549,7 @@ class SentenceDataStream(object):
             self.q_idx_matrix_batches.append(q_batch)
             self.a_idx_matrix_batches.append(a_batch)
             if self.t_e_mode == 't':
-                self.label_batch.append(np.array(label_lst, dtype = np.int32))
+                self.label_batches.append(np.array(label_lst, dtype = np.int32))
             
             """check the dimensionality of these matrices when network doesn't accept them"""
             # write_log("q_batch_size: " + str(q_batch.shape))
@@ -569,13 +569,55 @@ class SentenceDataStream(object):
         return batch_span
     
     def get_batch(self):
-        '''a generator generates data to feed into the model directly'''
+        '''
+         a generator generates data to feed into the model directly
+         yields a tuple of tensors:
+         (q_batch, a_batch, label_batch) in 't' mode
+         (q_batch, a_batch) in 'e' mode
+         a q_batch is 3 dimensional: (sentence, word, vector dim)
+         same for a_batch
+         a label batch is 1 dimensional: (sentence pair)
+        '''
         batch_num = 0
         batch_span = self.batch_span
+        # batch_size = self.batch_size
+        wdim = self.vocab.get_word_dimensionality()
+
         for (batch_start, batch_end) in batch_span:
+            q_idx_batch_matrix = self.q_idx_matrix_batches[batch_num]
+            a_idx_batch_matrix = self.a_idx_matrix_batches[batch_num]
+            # generate 3-dim tensors:(sentence, word, dim)
+            # for question and answer batch
+            q_mtx_batch_dim0 = q_idx_batch_matrix.shape[0]
+            q_mtx_len_dim1 = q_idx_batch_matrix.shape[1]
+            a_mtx_batch_dim0 = a_idx_batch_matrix.shape[0]
+            a_mtx_len_dim1 = a_idx_batch_matrix.shape[1]
+            q_batch_tensor = np.zeros((q_mtx_batch_dim0,
+                                       q_mtx_len_dim1,
+                                       wdim),
+                                      dtype = np.float32
+                                      )
+            a_batch_tensor = np.zeros((a_mtx_batch_dim0,
+                                       a_mtx_len_dim1,
+                                       wdim),
+                                      dtype = np.float32
+                                      )
+            for i in range(q_mtx_batch_dim0):
+                for j in range(q_mtx_len_dim1):
+                    q_batch_tensor[i][j] = self.vocab.get_vector_by_index(q_idx_batch_matrix[i][j])
+            for i in range(a_mtx_batch_dim0):
+                for j in range(a_mtx_len_dim1):
+                    a_batch_tensor[i][j] = self.vocab.get_vector_by_index(a_idx_batch_matrix[i][j])
             
+            if self.t_e_mode == 't':
+                yield (q_batch_tensor, a_batch_tensor, self.label_batches[batch_num])
+            else:
+                yield (q_batch_tensor, a_batch_tensor)
             batch_num += 1
-            
+    
+    def get_batch_size(self):
+        return self.batch_size
+    
     def _pad(self, idx_seq_lst, max_seq_len):
         '''
          pad sequences in the list to the max length
