@@ -19,7 +19,8 @@ class ConvQAModelGraph(object):
         # input dim: (sentence length, word dim)
         _q_input = Input(shape=(None, wdim))
         _a_input = Input(shape=(None, wdim))
-        self.model_inputs = (_q_input, _a_input)
+        _add_feat_input = Input(shape=(4,))
+        self.model_inputs = (_q_input, _a_input, _add_feat_input)
         
         # feature map dim: (sent_len-filter_len+1, feat_map_num)
         _q_feature_maps = Conv1D(input_shape = (None, wdim),
@@ -50,11 +51,11 @@ class ConvQAModelGraph(object):
         _qM_dot_res = sent_match_layer_0(_q_pooled_maps)
         _sent_match_res = sent_match_layer_1([_qM_dot_res, _a_pooled_maps])
         
-        # concatenate res dim: (2*feat_map_num+1, )
-        _conc_res = Concatenate()([_q_pooled_maps, _sent_match_res, _a_pooled_maps])
+        # concatenate res dim: (2*feat_map_num+5, )
+        _conc_res = Concatenate()([_q_pooled_maps, _sent_match_res, _a_pooled_maps, _add_feat_input])
         
-        # hidden layer out dim: (2*feat_map_num+1, )
-        _hid_res = Dense(units = 2 * feat_map_num + 1,
+        # hidden layer out dim: (2*feat_map_num+5, )
+        _hid_res = Dense(units = 2 * feat_map_num + 5,
                          activation = 'tanh',
                          use_bias = True,
                          kernel_regularizer = regularizers.l2(0.0001),
