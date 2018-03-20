@@ -23,6 +23,8 @@ import time
 def exec_(param):
     
     '''initialize vocab for specified problem'''
+    global time_point
+    time_point = time.clock()
     # common config and user control parameter loading
     qa_data_mode = param['data_mode'].qa_data
     wdim = cfg.ModelConfig.WORD_DIM_DICT[qa_data_mode]
@@ -49,8 +51,8 @@ def exec_(param):
         corpus_path = cfg.DirConfig.CORPUS_PATH_DICT[corpus_mode]
         clean_corpus_path = cfg.DirConfig.CLEAN_CORPUS_PATH_DICT[corpus_mode]
         
-        print("---starting to clean corpus text at running time %f---" % time.clock())
-        write_log("started to clean corpus text at running time %f\n" % time.clock())
+        print("---starting to clean corpus text at running time %f---" % (time.clock() - time_point))
+        write_log("started to clean corpus text at running time %f\n" % (time.clock() - time_point))
         text_cleaner = du.TextCleaner(corpus_path)
         # load stop word list into text cleaner if needed
         if s_w_rmvl:
@@ -63,12 +65,12 @@ def exec_(param):
         dst_corpus_path = cfg.DirConfig.W2V_DIR + clean_corpus_filename
         copyfile(clean_corpus_path, dst_corpus_path)
         
-        print("---starting to build vocab database at running time %f---" % time.clock())
-        write_log("started to build vocab database at running time %f\n" % time.clock())
+        print("---starting to build vocab database at running time %f---" % (time.clock() - time_point))
+        write_log("started to build vocab database at running time %f\n" % (time.clock() - time_point))
         vocab.build_vocab_database(qa_data_mode, clean_corpus_filename)
     else:
-        print("---starting to load vocab from database at running time %f---" % time.clock())
-        write_log("started to load vocab from database at running time %f\n" % time.clock())
+        print("---starting to load vocab from database at running time %f---" % (time.clock() - time_point))
+        write_log("started to load vocab from database at running time %f\n" % (time.clock() - time_point))
         vocab.load_wv_from_db(qa_data_mode)
     
     '''
@@ -77,12 +79,12 @@ def exec_(param):
      so beware of deadlock in database operation
     '''
     if train_set != 'NAH': # training
-        print("---starting to prepare training data stream at running time %f---" % time.clock())
-        write_log("started to prepare training data stream at running time %f\n" % time.clock())
+        print("---starting to prepare training data stream at running time %f---" % (time.clock() - time_point))
+        write_log("started to prepare training data stream at running time %f\n" % (time.clock() - time_point))
         data_stream = du.SentenceDataStream(qa_data_path_t, vocab, (qa_data_mode, 't'))
         
-        print("---starting to initialize model for training at running time %f---" % time.clock())
-        write_log("started to initialize model for training at running time %f\n" % time.clock())
+        print("---starting to initialize model for training at running time %f---" % (time.clock() - time_point))
+        write_log("started to initialize model for training at running time %f\n" % (time.clock() - time_point))
         model_graph = ConvQAModelGraph(wdim)
         model_in = model_graph.get_model_inputs()
         model_out = model_graph.get_model_outputs()
@@ -102,8 +104,8 @@ def exec_(param):
                 print("%s" % e)
                 write_log("%s" % e)
         # start training
-        print("---starting to feed model at running time %f---" % time.clock())
-        write_log("started to feed model at running time %f\n" % time.clock())
+        print("---starting to feed model at running time %f---" % (time.clock() - time_point))
+        write_log("started to feed model at running time %f\n" % (time.clock() - time_point))
         for _ in range(train_epoch):
             g = data_stream.get_batch()
             while(True):
@@ -117,15 +119,15 @@ def exec_(param):
         my_model.save_weights(model_weight_path)
     
     if eval_set != 'NAH': # evaluation
-        print("---starting to prepare evaluation data stream at running time %f---" % time.clock())
-        write_log("started to prepare evaluation data stream at running time %f\n" % time.clock())
+        print("---starting to prepare evaluation data stream at running time %f---" % (time.clock() - time_point))
+        write_log("started to prepare evaluation data stream at running time %f\n" % (time.clock() - time_point))
         
         predicted_score_lst = []
         score_file = open(score_path, 'wb')
         
         data_stream = du.SentenceDataStream(qa_data_path_e, vocab, (qa_data_mode, 'e'))
-        print("---starting to initialize model for evaluation at running time %f---" % time.clock())
-        write_log("started to initialize model for evaluation at running time %f\n" % time.clock())
+        print("---starting to initialize model for evaluation at running time %f---" % (time.clock() - time_point))
+        write_log("started to initialize model for evaluation at running time %f\n" % (time.clock() - time_point))
         model_graph = ConvQAModelGraph(wdim)
         model_in = model_graph.get_model_inputs()
         model_out = model_graph.get_model_outputs()
@@ -159,8 +161,37 @@ def exec_(param):
         res = eval_in_model(qa_data_path_e, score_path, '')
         write_log(res + '\n')
     
-    write_log("Finished at time %f.\n" % time.clock())
+    write_log("Finished at time %f.\n" % (time.clock() - time_point))
+    time_point = time.clock()
     
+def grid_search(param):
+    h_param_lst = []
+    for feat_map_num in (50, 75, 100, 125, 150):
+        for conv_ftr_len in (1,2,3,4,5,6,7,8):
+            for b_size in (1, 10, 32, 50, 64, 80, 100):
+                for t_epch in (1, 5, 10, 15, 20, 15):
+                    h_param_lst.append((feat_map_num, conv_ftr_len, b_size, t_epch))
+    
+    for cur_h_param in h_param_lst:
+        write_log("using hyper parameters:\n")
+        write_log("LING_UNIT = %s\n" % str(cfg.PreProcessConfig.LING_UNIT))
+        write_log("PUNCTUALATION_REMOVAL = %s\n" % str(cfg.PreProcessConfig.PUNCTUALATION_REMOVAL))
+        write_log("STOP_WORD_REMOVAL = %s\n" % str(cfg.PreProcessConfig.STOP_WORD_REMOVAL))
+        write_log("SORT_INSTANCE = %s\n" % str(cfg.ModelConfig.SORT_INSTANCE))
+        write_log("PAD_WIDE = %s" % str(cfg.ModelConfig.PAD_WIDE))
+        write_log("----------------------------\n")
+        
+        write_log("FEATURE_MAP_NUM = %d\n" % cur_h_param[0])
+        write_log("CONV_FILTER_LEN = %d\n" % cur_h_param[1])
+        write_log("BATCH_SIZE = %d\n" % cur_h_param[2])
+        write_log("TRAIN_EPOCH = %d\n" % cur_h_param[3])
+        cfg.ModelConfig.FEATURE_MAP_NUM = cur_h_param[0]
+        cfg.ModelConfig.CONV_FILTER_LEN = cur_h_param[1]
+        cfg.ModelConfig.BATCH_SIZE = cur_h_param[2]
+        cfg.ModelConfig.TRAIN_EPOCH = cur_h_param[3]
+    
+        exec_(param)
+
 def generate_model_paths(qa_data_mode, ling_unit, s_w_rmvl, train_set, eval_set):
     '''
      generate a tuple of paths of the files that the qa matching model needs

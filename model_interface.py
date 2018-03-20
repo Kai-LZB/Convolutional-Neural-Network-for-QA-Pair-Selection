@@ -7,7 +7,7 @@ Interface for programmer
 
 '''
 
-from model_control import exec_
+from model_control import exec_, grid_search
 
 class DataMode():
     '''
@@ -70,11 +70,12 @@ class ModelMode():
         # most commonly used setting
         self.use_saved_4_training = False
         self.use_saved_4_testing = False
-        self.train_set = "NAH"
-        self.eval_set = "TRAIN"
+        self.train_set = "TRAIN"
+        self.eval_set = "DEV"
     
 
 if __name__ == '__main__':
+    to_grid_search = True # if True: search the hyperparam space and train accordingly; if False: use fixed value of config.py
     param = {}
     data_mode = DataMode()
     preprocess_mode = PreprocessMode()
@@ -87,5 +88,8 @@ if __name__ == '__main__':
     param["preprocess_mode"] = preprocess_mode
     param["model_mode"] = model_mode
     
-    exec_(param)
+    if to_grid_search:
+        grid_search(param)
+    else:
+        exec_(param)
     

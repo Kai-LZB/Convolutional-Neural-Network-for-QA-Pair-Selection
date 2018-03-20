@@ -51,12 +51,12 @@ class PreProcessConfig(object):
      cleaning text for qa data set
     '''
     CORPUS_MODE = 'CHN_TEST' # 'ENG_TEST', 'CHN_TEST', 'CHN_PEOPLE_S_DAILY'...
-    LING_UNIT = "WORD" # "WORD" and "CHAR" 
+    LING_UNIT = "WORD" # "WORD" and "CHAR" # hand search
     # text cleaning
-    PUNCTUALATION_REMOVAL = True
-    STOP_WORD_REMOVAL = False # only matters in word mode
-    NUMBER_REMOVAL = True
-    # w2v training
+    PUNCTUALATION_REMOVAL = True # hand search
+    STOP_WORD_REMOVAL = False # hand search
+    NUMBER_REMOVAL = True  # hand search
+    # w2v training  # hand search
     # for WORD_DIM see ModelConfig
     W2V_ALGORITHM_CBOW = 1 # 1 for C-BOW, 0 for skip-gram
     W2V_WIN_SIZE = 8
@@ -66,7 +66,7 @@ class PreProcessConfig(object):
 
 class ModelConfig(object):
     SUPPORTED_DATASET = set(['HITNLP', 'TREC'])
-    WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200}
+    WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200} # hand search
     
     SORT_INSTANCE = False
     PAD_WIDE = True
