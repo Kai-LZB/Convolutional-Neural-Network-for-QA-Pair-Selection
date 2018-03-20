@@ -264,7 +264,6 @@ class Vocab(object):
         ist_val_command = "INSERT INTO VOCABULARY_SIZE VALUES (?)"
         c.execute(ist_val_command, (vsize,))
         
-        
         # create unknown word mapping
         crt_tbl_command = "CREATE TABLE UNKNOWN_WORD_MAPPING (WORD TEXT, SIMILAR_WORD TEXT)"
         c.execute(crt_tbl_command)
@@ -272,7 +271,6 @@ class Vocab(object):
         conn.commit()
         
         conn.close()
-        
     
     def load_wv_from_db(self, qa_data_mode):
         '''
@@ -340,8 +338,7 @@ class Vocab(object):
                 print("%d: %s" % (cur_idx, self.idx2word[cur_idx].decode("utf-8")))
                 print(self.word_matrix[cur_idx])
             '''
-        
-        
+    
     def has_word(self, word):
         ret = word in self.word2idx
         return ret

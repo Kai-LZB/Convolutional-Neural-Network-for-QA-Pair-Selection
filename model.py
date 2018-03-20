@@ -86,5 +86,3 @@ class ConvQAModelGraph(object):
     def get_model_outputs(self):
         return self.model_output
     
-        
-        

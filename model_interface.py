@@ -72,7 +72,7 @@ class ModelMode():
         self.use_saved_4_testing = False
         self.train_set = "NAH"
         self.eval_set = "TRAIN"
-        
+    
 
 if __name__ == '__main__':
     param = {}

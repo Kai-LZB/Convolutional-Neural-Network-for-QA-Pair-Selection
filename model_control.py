@@ -191,7 +191,9 @@ def generate_model_paths(qa_data_mode, ling_unit, s_w_rmvl, train_set, eval_set)
     score_path = cfg.DirConfig.PREDICTED_SCORE_DIR
     
     return (wv_path, qa_data_path_t, qa_data_path_e, model_weight_path, score_path)
-    
+
+
+
 def generate_corpus_path():
     '''
      generate a tuple of paths of the files that is used in word vector training

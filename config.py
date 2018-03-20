@@ -42,9 +42,7 @@ class DirConfig(object):
     W2V_EXE_DIR = W2V_DIR + 'word2vec.exe'
     W2V_RES_DIR = W2V_DIR + 'vectors.bin'
     STOP_WORD_DIR = DATA_RAW_DIR + 'stop_words'
-    
-    
-    
+
 class PreProcessConfig(object):
     '''
      pre-processing in big picture includes 3 stages:
