@@ -44,7 +44,6 @@ def exec_(param):
     wv_path, qa_data_path_t, qa_data_path_e, model_weight_path, score_path = generate_model_paths(qa_data_mode, ling_unit, s_w_rmvl, train_set, eval_set)
     
     vocab = du.Vocab(wv_path)
-    stop_set = set([])
     # initialize a vocab instance
     if train_wv: # train new vectors using corpus
         # clean the corpus text
@@ -55,10 +54,8 @@ def exec_(param):
         write_log("started to clean corpus text at running time %f\n" % (time.clock() - time_point))
         text_cleaner = du.TextCleaner(corpus_path)
         # load stop word list into text cleaner if needed
-        if s_w_rmvl:
-            stop_set = vocab.get_stop_word_set()
         
-        text_cleaner.clean_chn_corpus_2file(clean_corpus_path, stop_set)
+        text_cleaner.clean_chn_corpus_2file(clean_corpus_path)
         
         # copy cleaned text to word2vec directory
         clean_corpus_filename = cfg.DirConfig.CLEAN_CORPUS_FILENAME_DICT[corpus_mode]
@@ -160,6 +157,8 @@ def exec_(param):
         score_file.close()
         res = eval_in_model(qa_data_path_e, score_path, '')
         write_log(res + '\n')
+        
+    print(vocab._unk_num)
     
     write_log("Finished at time %f.\n" % (time.clock() - time_point))
     time_point = time.clock()
@@ -203,16 +202,15 @@ def generate_model_paths(qa_data_mode, ling_unit, s_w_rmvl, train_set, eval_set)
     _data_dir = cfg.DirConfig.DATA_CACHED_DIR
     _wv_file_sfx = cfg.DirConfig.WV_FILE_SUFFIX
     if ling_unit == "WORD": # use parsed word as atomic representation
-        if s_w_rmvl:
-            _l_u = '_nonstop_w'
-        else:
-            _l_u = '_w'
+        _u = '_w'
     else: #CHAR mode
-        _l_u = '_c'
+        _u = '_c'
     # relative path DATA_DIR + 'HITNLP' + ''_nonstop_w'_w'/'_c' + 'vec.db'
     # since sqlite3 tool only accepts abs path, we use abs path here rather than relative path
-    _wv_re_path = _data_dir + qa_data_mode + _l_u + _wv_file_sfx
+    _wv_re_path = _data_dir + qa_data_mode + _u + _wv_file_sfx
+    #_wv_nons_re_path = _data_dir + qa_data_mode + '_nonstop' + _u + _wv_file_sfx
     wv_path = os.path.abspath(_wv_re_path)
+    #wv_ns_path = os.path.abspath(_wv_nons_re_path)
     
     """training&evaluation data path"""
     qa_data_path_t = cfg.DirConfig.QA_DATA_PATH_DICT[qa_data_mode][train_set]

@@ -70,12 +70,12 @@ class ModelMode():
         # most commonly used setting
         self.use_saved_4_training = False
         self.use_saved_4_testing = False
-        self.train_set = "TRAIN"
+        self.train_set = "NAH"
         self.eval_set = "DEV"
     
 
 if __name__ == '__main__':
-    to_grid_search = True # if True: search the hyperparam space and train accordingly; if False: use fixed value of config.py
+    to_grid_search = False # if True: search the hyperparam space and train accordingly; if False: use fixed value of config.py
     param = {}
     data_mode = DataMode()
     preprocess_mode = PreprocessMode()

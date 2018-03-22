@@ -58,7 +58,7 @@ class TextCleaner(object):
         
         # replace punctuation with spacing to make separate items remain separated
         if self.punc_rmvl:
-            line = re.sub("[][！？。｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#$%&\'()*+,-./:;<=>?@\\\^_`{|}~\s\t]+", " ", line)
+            line = re.sub("[][！？。｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞·〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#%&\'()+,-/:;<=>@\\\^_`{}~\s\t\.\^\$\*\+\?\|]+", " ", line)
         
         # further cleaning including segmentation, number removal
         if self.ling_unit == "WORD": # seg the text by word
@@ -96,14 +96,14 @@ class TextCleaner(object):
                 
         return line_seg, line_seg_stop_w
     
-    def clean_chn_corpus_2file(self, save_path, stop_set):
+    def clean_chn_corpus_2file(self, save_path):
         f = open(self.text_path, 'rb') # use 'rb' mode for windows decode problem
         f_w = open(save_path, 'wb')
         # start to clean each line
         for l in f:
             line = l.decode("utf-8")
             
-            line_seg = self.clean_chn_line(line, stop_set)
+            line_seg = (self.clean_chn_line(line, set([])))[1]
             
             if len(line_seg) == 0:
                 continue
@@ -149,6 +149,7 @@ class Vocab(object):
         self.word_matrix = None
         self.stop_set = self.load_stop_word_set()
         self.__unk_mapping = {}
+        self._unk_num = 0
         
     
     def build_vocab_database(self, qa_data_mode, clean_corpus_filename):
@@ -195,10 +196,12 @@ class Vocab(object):
         wdim_read = int(line.split()[1])
         assert wdim == wdim_read
         
-        line = vec_bin_file.readline()
+        
         widx = 0
         vector_list = []
-        while(line != b''):
+        
+        for l in vec_bin_file:
+            line = l.decode("utf-8")
             word = line.split()[0]
             vector_b = line.split()[1:]
             vector = [float(i) for i in vector_b]
@@ -206,11 +209,10 @@ class Vocab(object):
             self.word2idx[word] = widx
             self.idx2word[widx] = word
             widx += 1
-            line = vec_bin_file.readline()
             
-        self.vocab_size = vsize # widx?
+        self.vocab_size = vsize
         self.wdim = wdim_read
-        
+        assert self.vocab_size == widx
         vec_bin_file.close()
         
         # initialize a empty word matrix 
@@ -228,12 +230,25 @@ class Vocab(object):
         except FileNotFoundError:
             pass
         
-        conn = sqlite3.connect(self.wv_path)
-        c = conn.cursor()
         
+        conn = sqlite3.connect(self.wv_path)
+        params = {}
+        params["wdim"] = wdim_read
+        params["vector_list"] = vector_list
+        params["vsize"] = vsize
+        self.create_tables_in_db(conn, params)
+        conn.close()
+        
+    
+    def create_tables_in_db(self, conn, params):
+        wdim = params["wdim"]
+        vector_list = params["vector_list"]
+        vsize = params["vsize"]
+        
+        c = conn.cursor()
         # create table for word vectors
         dim_col_strs = "" # string of column names to be filled into command
-        for i in range(wdim_read):
+        for i in range(wdim):
             dim_col_strs = dim_col_strs + ", DIM%d REAL" % i #, dim0 real, dim1 real...
         # CREATE TABLE word_vecs (word text, dim0 real, ..., dimn real)
         crt_tbl_command = "CREATE TABLE WORD_VECTORS (WORD TEXT" + dim_col_strs + ")"
@@ -260,7 +275,7 @@ class Vocab(object):
         crt_tbl_command = "CREATE TABLE VOCABULARY_SIZE (VSIZE INTEGER)"
         c.execute(crt_tbl_command)
         ist_val_command = "INSERT INTO VECTOR_DIMENSIONALITY VALUES (?)"
-        c.execute(ist_val_command, (wdim_read,))
+        c.execute(ist_val_command, (wdim,))
         ist_val_command = "INSERT INTO VOCABULARY_SIZE VALUES (?)"
         c.execute(ist_val_command, (vsize,))
         
@@ -269,8 +284,6 @@ class Vocab(object):
         c.execute(crt_tbl_command)
         
         conn.commit()
-        
-        conn.close()
     
     def load_wv_from_db(self, qa_data_mode):
         '''
@@ -316,6 +329,7 @@ class Vocab(object):
             self.word2idx[word] = widx
             self.idx2word[widx] = word
             widx += 1
+        assert widx == self.vocab_size
             
         # get oov word mapping
         for oov_word, sim_word in c.execute("SELECT * FROM UNKNOWN_WORD_MAPPING"):
@@ -365,6 +379,7 @@ class Vocab(object):
             sim_word = self.__unk_mapping[oov_word]
         else: # not recorded
             # randomly map this word to a similar word
+            self._unk_num += 1
             sim_idx = np.random.randint(0, self.vocab_size)
             sim_word = self.idx2word[sim_idx]
             # store oov word mapping
