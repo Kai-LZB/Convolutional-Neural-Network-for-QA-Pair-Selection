@@ -19,6 +19,8 @@ sys.path.append(os.path.abspath(ext_tool_dir))
 # ignore error msg here as long as jieba package in the right place
 import jieba
 
+digit_ch_set = set(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '０', '１', '２', '３', '４', '５', '６', '７', '８', '９'])
+punc_re_str = "[][！？。｡＂＃＄％＆＇―（）—＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞·〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#%&\'()+,-/:;<=>@\\\^_`{}~\s\t\.\^\$\*\+\?\|]+"
 class TextCleaner(object):
     '''
      text cleaner instance
@@ -58,7 +60,7 @@ class TextCleaner(object):
         
         # replace punctuation with spacing to make separate items remain separated
         if self.punc_rmvl:
-            line = re.sub("[][！？。｡＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞·〟〰〾〿–—‘’‛“”„‟…‧﹏.!\"#%&\'()+,-/:;<=>@\\\^_`{}~\s\t\.\^\$\*\+\?\|]+", " ", line)
+            line = re.sub(punc_re_str, " ", line)
         
         # further cleaning including segmentation, number removal
         if self.ling_unit == "WORD": # seg the text by word
@@ -100,6 +102,7 @@ class TextCleaner(object):
         f = open(self.text_path, 'rb') # use 'rb' mode for windows decode problem
         f_w = open(save_path, 'wb')
         # start to clean each line
+        
         for l in f:
             line = l.decode("utf-8")
             
@@ -117,7 +120,7 @@ class TextCleaner(object):
     def _remove_digit(self, s):
         flag_all_digit = True
         for ch in s:
-            if(ch < '0' or ch > '9'):
+            if(ch not in digit_ch_set): #< '0' or ch > '9'):
                 flag_all_digit = False
                 break
         if flag_all_digit:
@@ -150,6 +153,7 @@ class Vocab(object):
         self.stop_set = self.load_stop_word_set()
         self.__unk_mapping = {}
         self._unk_num = 0
+        self.kn_set = set([])
         
     
     def build_vocab_database(self, qa_data_mode, clean_corpus_filename):
@@ -379,7 +383,7 @@ class Vocab(object):
             sim_word = self.__unk_mapping[oov_word]
         else: # not recorded
             # randomly map this word to a similar word
-            self._unk_num += 1
+            self._unk_num += 1 ######################################################
             sim_idx = np.random.randint(0, self.vocab_size)
             sim_word = self.idx2word[sim_idx]
             # store oov word mapping
@@ -440,7 +444,7 @@ class Vocab(object):
         idx_sequence = []
         for word in sentence:
             if self.has_word(word): # in-vocab word
-                pass # stop process & cleaning
+                self.kn_set.add(word) ################################
                 idx = self.word2idx[word]
             else: # OOV word
                 sim_word = self.unk_map(word)

@@ -43,7 +43,8 @@ class PreprocessMode():
          
     '''
     def __init__(self):
-        self.train_wv = False # decides whether to train new vectors
+        self.train_wv = True # decides whether to train new vectors
+        self.clean_corpus = True
 
 class ModelMode():
     '''

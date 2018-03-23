@@ -13,16 +13,16 @@ class DirConfig(object):
     DATA_RAW_DIR = '../data/raw/'
     DATA_CACHED_DIR = '../data/cached/'
     # HITNLP_WV_PATH = DATA_DIR + 'HITNLP' + '_w' + 'vec.db'
-    CORPUS_PATH_DICT = {'CHN_PEOPLE_S_DAILY': DATA_RAW_DIR + '------',
+    CORPUS_PATH_DICT = {'MIXED_CHN': DATA_RAW_DIR + 'mixed_corpus',
                    'ENG_TEST': DATA_RAW_DIR + 'text8',
                    'CHN_TEST': DATA_RAW_DIR + 'test_chn_corpus',
                    }
-    CLEAN_CORPUS_PATH_DICT = {'CHN_PEOPLE_S_DAILY': DATA_CACHED_DIR + '------',
+    CLEAN_CORPUS_PATH_DICT = {'MIXED_CHN': DATA_CACHED_DIR + 'mixed_corpus_clean',
                          'ENG_TEST': DATA_CACHED_DIR + 'text8_clean',
                          'CHN_TEST': DATA_CACHED_DIR + 'test_chn_corpus_clean',
                          }
     # for cc path in word2vec directory, see dst_corpus_path in model_control module, exec_ function
-    CLEAN_CORPUS_FILENAME_DICT = {'CHN_PEOPLE_S_DAILY': '------',
+    CLEAN_CORPUS_FILENAME_DICT = {'MIXED_CHN': 'mixed_corpus_clean',
                              'ENG_TEST': 'text8_clean',
                              'CHN_TEST': 'test_chn_corpus_clean',
                              }
@@ -33,7 +33,7 @@ class DirConfig(object):
     #CLEAN_QA_DATA_PATH_DICT = {'HITNLP': {'DEV': DATA_CACHED_DIR + 'develop.data', 'TRAIN': DATA_CACHED_DIR + 'training.data', 'TEST': DATA_CACHED_DIR + 'randomed_labeled_testing.data', 'NAH': ''},
     #                           }
     MODEL_WEIGHTS_DIR = DATA_DIR + 'my_model_weights.h5'
-    PREDICTED_SCORE_DIR = DATA_RAW_DIR + 'predicted.score'
+    PREDICTED_SCORE_DIR = DATA_DIR + 'predicted.score'
     WV_FILE_SUFFIX = 'vec.db'
     EXT_TOOL_DIR = '../ext_tool/'
     LOG_DIR = '../log/'
@@ -50,7 +50,7 @@ class PreProcessConfig(object):
      vocab building
      cleaning text for qa data set
     '''
-    CORPUS_MODE = 'CHN_TEST' # 'ENG_TEST', 'CHN_TEST', 'CHN_PEOPLE_S_DAILY'...
+    CORPUS_MODE = 'MIXED_CHN' # 'ENG_TEST', 'CHN_TEST', 'MIXED_CHN'...
     LING_UNIT = "WORD" # "WORD" and "CHAR" # hand search
     # text cleaning
     PUNCTUALATION_REMOVAL = True # hand search
@@ -66,7 +66,7 @@ class PreProcessConfig(object):
 
 class ModelConfig(object):
     SUPPORTED_DATASET = set(['HITNLP', 'TREC'])
-    WORD_DIM_DICT = {'HITNLP': 200, 'ENG_TEST': 200, 'CHN_TEST': 200} # hand search
+    WORD_DIM_DICT = {'HITNLP': 50, 'ENG_TEST': 200, 'CHN_TEST': 200} # hand search
     
     SORT_INSTANCE = False
     PAD_WIDE = True

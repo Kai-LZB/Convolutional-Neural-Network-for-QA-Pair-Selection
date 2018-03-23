@@ -30,6 +30,7 @@ def exec_(param):
     wdim = cfg.ModelConfig.WORD_DIM_DICT[qa_data_mode]
     # use_preprocessed = param['model_mode'].use_preprocessed
     train_wv = param["preprocess_mode"].train_wv
+    clean_corpus = param["preprocess_mode"].clean_corpus
     # wdim = cfg.ModelConfig.WORD_DIM[qa_data_mode]
     corpus_mode = cfg.PreProcessConfig.CORPUS_MODE
     ling_unit = cfg.PreProcessConfig.LING_UNIT # linguistic unit mode
@@ -50,12 +51,12 @@ def exec_(param):
         corpus_path = cfg.DirConfig.CORPUS_PATH_DICT[corpus_mode]
         clean_corpus_path = cfg.DirConfig.CLEAN_CORPUS_PATH_DICT[corpus_mode]
         
-        print("---starting to clean corpus text at running time %f---" % (time.clock() - time_point))
-        write_log("started to clean corpus text at running time %f\n" % (time.clock() - time_point))
-        text_cleaner = du.TextCleaner(corpus_path)
-        # load stop word list into text cleaner if needed
-        
-        text_cleaner.clean_chn_corpus_2file(clean_corpus_path)
+        if clean_corpus:
+            print("---starting to clean corpus text at running time %f---" % (time.clock() - time_point))
+            write_log("started to clean corpus text at running time %f\n" % (time.clock() - time_point))
+            text_cleaner = du.TextCleaner(corpus_path)
+            
+            text_cleaner.clean_chn_corpus_2file(clean_corpus_path)
         
         # copy cleaned text to word2vec directory
         clean_corpus_filename = cfg.DirConfig.CLEAN_CORPUS_FILENAME_DICT[corpus_mode]
@@ -69,6 +70,7 @@ def exec_(param):
         print("---starting to load vocab from database at running time %f---" % (time.clock() - time_point))
         write_log("started to load vocab from database at running time %f\n" % (time.clock() - time_point))
         vocab.load_wv_from_db(qa_data_mode)
+    
     
     '''
      initialize data stream for model
@@ -158,7 +160,8 @@ def exec_(param):
         res = eval_in_model(qa_data_path_e, score_path, '')
         write_log(res + '\n')
         
-    print(vocab._unk_num)
+    print(vocab._unk_num) #######################################
+    print(len(vocab.kn_set))
     
     write_log("Finished at time %f.\n" % (time.clock() - time_point))
     time_point = time.clock()
