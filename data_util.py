@@ -219,7 +219,7 @@ class Vocab(object):
             self.idx2word[widx] = word
             widx += 1
             
-        self.vocab_size = vsize
+        self.vocab_size = widx
         self.wdim = wdim_read
         # assert self.vocab_size == widx # unread empty word might result in difference in vsize stored and vsize read
         vec_bin_file.close()
