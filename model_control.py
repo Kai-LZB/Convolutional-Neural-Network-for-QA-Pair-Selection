@@ -177,8 +177,8 @@ def grid_search(param):
     h_param_lst = []
     for feat_map_num in (50, 75, 100, 125, 150):
         for conv_ftr_len in (1,2,3,4,5,6,7,8):
-            for b_size in (1, 10, 32, 50, 64, 80, 100):
-                for t_epch in (1, 5, 10, 15, 20, 15):
+            for b_size in (5, 10, 32, 50, 64, 80, 100):
+                for t_epch in (5, 10, 15, 20, 15):
                     h_param_lst.append((feat_map_num, conv_ftr_len, b_size, t_epch))
     
     for cur_h_param in h_param_lst:
