@@ -208,8 +208,8 @@ class Vocab(object):
             line = l.decode("utf-8")
             if len(line.split()) != wdim + 1:
                 write_log("length of line in vector file is not consistent with expected:\n")
-                write_log("%s\n")
-                write_log("expected %d, but read %d\n" % (len(line.split()), wdim))
+                write_log("%s\n" % line)
+                write_log("expected %d, but read %d\n" % (wdim, len(line.split())-1))
                 continue
             word = line.split()[0]
             vector_b = line.split()[1:]
