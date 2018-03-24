@@ -221,7 +221,7 @@ class Vocab(object):
             
         self.vocab_size = vsize
         self.wdim = wdim_read
-        assert self.vocab_size == widx
+        # assert self.vocab_size == widx # unread empty word might result in difference in vsize stored and vsize read
         vec_bin_file.close()
         
         # initialize a empty word matrix 
