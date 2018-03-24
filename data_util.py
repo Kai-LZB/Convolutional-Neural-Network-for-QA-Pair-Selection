@@ -206,6 +206,11 @@ class Vocab(object):
         
         for l in vec_bin_file:
             line = l.decode("utf-8")
+            if len(line.split()) != wdim + 1:
+                write_log("length of line in vector file is not consistent with expected:\n")
+                write_log("%s\n")
+                write_log("expected %d, but read %d\n" % (len(line.split()), wdim))
+                continue
             word = line.split()[0]
             vector_b = line.split()[1:]
             vector = [float(i) for i in vector_b]

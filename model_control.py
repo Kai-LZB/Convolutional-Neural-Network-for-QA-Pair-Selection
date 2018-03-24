@@ -116,7 +116,11 @@ def exec_(param):
                 y = [label_batch]
                 my_model.fit(x, y, batch_size=batch_size)
         my_model.save_weights(model_weight_path)
-    
+        
+        print(vocab._unk_num) #######################################
+        print(len(vocab.kn_set))
+        write_log("In %s set, %d known words and %d unknown words found.\n" % (eval_set, len(vocab.kn_set), vocab._unk_num))
+        
     if eval_set != 'NAH': # evaluation
         print("---starting to prepare evaluation data stream at running time %f---" % (time.clock() - time_point))
         write_log("started to prepare evaluation data stream at running time %f\n" % (time.clock() - time_point))
@@ -157,11 +161,14 @@ def exec_(param):
             score_to_write = (str(sc[0]) + '\n').encode('utf-8')
             score_file.write(score_to_write)
         score_file.close()
+        
+        print(vocab._unk_num) #######################################
+        print(len(vocab.kn_set))
+        write_log("In %s set, %d known words and %d unknown words found.\n" % (eval_set, len(vocab.kn_set), vocab._unk_num))
+        
         res = eval_in_model(qa_data_path_e, score_path, '')
         write_log(res + '\n')
         
-    print(vocab._unk_num) #######################################
-    print(len(vocab.kn_set))
     
     write_log("Finished at time %f.\n" % (time.clock() - time_point))
     time_point = time.clock()
