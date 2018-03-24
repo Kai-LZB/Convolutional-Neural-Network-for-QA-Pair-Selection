@@ -242,9 +242,9 @@ class Vocab(object):
         
         conn = sqlite3.connect(self.wv_path)
         params = {}
-        params["wdim"] = wdim_read
+        params["wdim"] = self.wdim
         params["vector_list"] = vector_list
-        params["vsize"] = vsize
+        params["vsize"] = self.vocab_size
         self.create_tables_in_db(conn, params)
         conn.close()
         
