@@ -76,7 +76,7 @@ class ModelConfig(object):
     MAX_SENT_LEN = 300
     # train config
     BATCH_SIZE = 50
-    TRAIN_EPOCH = 5
+    TRAIN_EPOCH = 1
     LOSS_FUNC = 'binary_crossentropy'
     OPT = 'adadelta'
     

@@ -23,6 +23,8 @@ import time
 def exec_(param):
     
     '''initialize vocab for specified problem'''
+    write_log("\n--------------------------------------\n")
+    
     global time_point
     time_point = time.clock()
     # common config and user control parameter loading
@@ -73,10 +75,60 @@ def exec_(param):
     
     
     '''
-     initialize data stream for model
-     data stream initiates unknown-word mapping
-     so beware of deadlock in database operation
+     initialize data stream for model and start training
+     (canceled) data stream initiates unknown-word mapping
+     (canceled) so beware of deadlock in database operation
     '''
+    if train_set != 'NAH' and eval_set != 'NAH': # do one time evaluation before training for comparison
+        print("evaluation before training:")
+        write_log("evaluation before training:\n")
+        print("---starting to prepare evaluation data stream at running time %f---" % (time.clock() - time_point))
+        write_log("started to prepare evaluation data stream at running time %f\n" % (time.clock() - time_point))
+        
+        predicted_score_lst = []
+        score_file = open(score_path, 'wb')
+        
+        data_stream = du.SentenceDataStream(qa_data_path_e, vocab, (qa_data_mode, 'e'))
+        print("---starting to initialize model for evaluation at running time %f---" % (time.clock() - time_point))
+        write_log("started to initialize model for evaluation at running time %f\n" % (time.clock() - time_point))
+        model_graph = ConvQAModelGraph(wdim)
+        model_in = model_graph.get_model_inputs()
+        model_out = model_graph.get_model_outputs()
+        my_model = Model(inputs=model_in, outputs=model_out)
+        loss_func = cfg.ModelConfig.LOSS_FUNC
+        optm = cfg.ModelConfig.OPT
+        my_model.compile(optimizer=optm, loss=loss_func, metrics=['accuracy'])
+        if use_saved_4_training: # in consistency with training here
+            try:
+                my_model.load_weights(model_weight_path)
+            except Exception as e:
+                print("%s" % e)
+                write_log("%s" % e)
+        else:
+            pass
+        # some hyper-parameters
+        batch_size = data_stream.get_batch_size()
+        g = data_stream.get_batch()
+        while(True):
+            try:
+                q_batch, a_batch, add_feat_batch = next(g)
+            except StopIteration:
+                break
+            x = [q_batch, a_batch, add_feat_batch]
+            predicted_batch = list(my_model.predict(x, batch_size))
+            predicted_score_lst.extend(predicted_batch)
+            # y = model.predict(x, batch_size=batch_size)
+        for sc in predicted_score_lst:
+            score_to_write = (str(sc[0]) + '\n').encode('utf-8')
+            score_file.write(score_to_write)
+        score_file.close()
+        
+        res = eval_in_model(qa_data_path_e, score_path, '')
+        write_log(res + '\n')
+        write_log("before-training evaluation ends\n")
+        write_log("----------------------------\n")
+        
+    
     if train_set != 'NAH': # training
         print("---starting to prepare training data stream at running time %f---" % (time.clock() - time_point))
         write_log("started to prepare training data stream at running time %f\n" % (time.clock() - time_point))
@@ -102,6 +154,9 @@ def exec_(param):
             except Exception as e:
                 print("%s" % e)
                 write_log("%s" % e)
+        else:
+            pass
+            
         # start training
         print("---starting to feed model at running time %f---" % (time.clock() - time_point))
         write_log("started to feed model at running time %f\n" % (time.clock() - time_point))
@@ -144,7 +199,8 @@ def exec_(param):
             except Exception as e:
                 print("%s" % e)
                 write_log("%s" % e)
-                
+        else:
+            pass
         # some hyper-parameters
         batch_size = data_stream.get_batch_size()
         g = data_stream.get_batch()
@@ -176,10 +232,12 @@ def exec_(param):
 def grid_search(param):
     h_param_lst = []
     for feat_map_num in (50, 75, 100, 125, 150):
-        for conv_ftr_len in (1,2,3,4,5,6,7,8):
+        for conv_ftr_len in (1, 2, 3, 4, 5, 6, 7, 8):
             for b_size in (5, 10, 32, 50, 64, 80, 100):
-                for t_epch in (5, 10, 15, 20, 15):
+                for t_epch in (5, 10, 15, 20, 25):
                     h_param_lst.append((feat_map_num, conv_ftr_len, b_size, t_epch))
+    
+    
     
     for cur_h_param in h_param_lst:
         write_log("using hyper parameters:\n")
@@ -187,7 +245,7 @@ def grid_search(param):
         write_log("PUNCTUALATION_REMOVAL = %s\n" % str(cfg.PreProcessConfig.PUNCTUALATION_REMOVAL))
         write_log("STOP_WORD_REMOVAL = %s\n" % str(cfg.PreProcessConfig.STOP_WORD_REMOVAL))
         write_log("SORT_INSTANCE = %s\n" % str(cfg.ModelConfig.SORT_INSTANCE))
-        write_log("PAD_WIDE = %s" % str(cfg.ModelConfig.PAD_WIDE))
+        write_log("PAD_WIDE = %s\n" % str(cfg.ModelConfig.PAD_WIDE))
         write_log("----------------------------\n")
         
         write_log("FEATURE_MAP_NUM = %d\n" % cur_h_param[0])
@@ -227,6 +285,7 @@ def generate_model_paths(qa_data_mode, ling_unit, s_w_rmvl, train_set, eval_set)
     qa_data_path_e = cfg.DirConfig.QA_DATA_PATH_DICT[qa_data_mode][eval_set]
     
     model_weight_path = cfg.DirConfig.MODEL_WEIGHTS_DIR
+    # ini_weight_path = cfg.DirConfig.MODEL_INITIALIZED_WEIGHTS_DIR
     score_path = cfg.DirConfig.PREDICTED_SCORE_DIR
     
     return (wv_path, qa_data_path_t, qa_data_path_e, model_weight_path, score_path)
