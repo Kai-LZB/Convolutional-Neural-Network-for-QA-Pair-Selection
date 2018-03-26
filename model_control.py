@@ -23,7 +23,7 @@ import time
 def exec_(param):
     
     '''initialize vocab for specified problem'''
-    write_log("\n--------------------------------------\n")
+    write_log("--------------------------------------------------------\n")
     
     global time_point
     time_point = time.clock()
@@ -227,19 +227,19 @@ def exec_(param):
         
     
     write_log("Finished at time %f.\n" % (time.clock() - time_point))
+    write_log("--------------------------------------------------------\n\n")
     time_point = time.clock()
     
 def grid_search(param):
     h_param_lst = []
-    for feat_map_num in (50, 75, 100, 125, 150):
-        for conv_ftr_len in (1, 2, 3, 4, 5, 6, 7, 8):
-            for b_size in (5, 10, 32, 50, 64, 80, 100):
-                for t_epch in (5, 10, 15, 20, 25):
+    for t_epch in (5, 10, 15, 20, 25):
+        for b_size in (5, 10, 32, 50, 64, 80, 100):
+            for feat_map_num in (50, 75, 100, 125, 150):
+                for conv_ftr_len in (1, 2, 3, 4, 5, 6, 7, 8):
                     h_param_lst.append((feat_map_num, conv_ftr_len, b_size, t_epch))
     
-    
-    
     for cur_h_param in h_param_lst:
+        write_log("\n\n")
         write_log("using hyper parameters:\n")
         write_log("LING_UNIT = %s\n" % str(cfg.PreProcessConfig.LING_UNIT))
         write_log("PUNCTUALATION_REMOVAL = %s\n" % str(cfg.PreProcessConfig.PUNCTUALATION_REMOVAL))

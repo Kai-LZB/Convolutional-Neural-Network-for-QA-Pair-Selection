@@ -43,8 +43,8 @@ class PreprocessMode():
          
     '''
     def __init__(self):
-        self.train_wv = True # decides whether to train new vectors
-        self.clean_corpus = True
+        self.train_wv = False # decides whether to train new vectors
+        self.clean_corpus = False
 
 class ModelMode():
     '''
@@ -70,8 +70,8 @@ class ModelMode():
     def __init__(self):
         # most commonly used setting
         self.use_saved_4_training = False
-        self.use_saved_4_testing = False
-        self.train_set = "NAH"
+        self.use_saved_4_testing = True
+        self.train_set = "DEV"
         self.eval_set = "DEV"
     
 

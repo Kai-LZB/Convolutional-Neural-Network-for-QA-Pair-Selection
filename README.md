@@ -14,7 +14,7 @@ in "data\", there are 2 folders and 1 weight_file:
 data\raw\
 data\cached\
 
-Question pair files are supposed to be put in "data\raw\". (for copyright reason, I will only release them if granted)
+Question pair files and stop word file(named "stop_words") are supposed to be put in "data\raw\". (for copyright reason, I will only release them if granted)
 
 During execution, several files and folders will be automatically generated:
 log\
