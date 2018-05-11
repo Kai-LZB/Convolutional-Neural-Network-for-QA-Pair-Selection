@@ -7,7 +7,7 @@ src\
 data\
 ext_tool\
 
-config.py, data_util.py, model.py, model_control.py, model_interface are supposed tp be put in "src\".
+config.py, data_util.py, model.py, model_control.py, model_interface are supposed to be put in "src\".
 External tools including jieba(module in folder), evaluation module(evaluation.py, by yafuilee), word2vec(by T. Mikolov) are supposed to be put in "ext_tool\".
 
 in "data\", there are 2 folders and 1 weight_file:
