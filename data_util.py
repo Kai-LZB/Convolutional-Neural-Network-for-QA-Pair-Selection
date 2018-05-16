@@ -633,7 +633,7 @@ class SentenceDataStream(object):
         overlap_num = len(overlap_set) 
         sum_set = q_set | a_set
         sum_num = len(sum_set)
-        ret = float(overlap_num) / float(sum_num)
+        ret = float(overlap_num) / float(len(q_seg)) # dice for float(sum_num); overlap for float(len(q_seg))
         return ret
     
     def calc_idf_word_overlap(self, q_seg, a_seg):
@@ -650,7 +650,7 @@ class SentenceDataStream(object):
         sum_num = len(sum_set)
         res = []
         for w in overlap_set:
-            idf_calculator = IDFCalculator(w, self._df_dict, float(overlap_num) / float(sum_num))
+            idf_calculator = IDFCalculator(w, self._df_dict, float(overlap_num) / float(len(q_seg))) # dice for float(sum_num); overlap for float(len(q_seg))
             res.append(idf_calculator)
         
         # calc global df one by one qa pair

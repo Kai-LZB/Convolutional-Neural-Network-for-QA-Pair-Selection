@@ -58,7 +58,7 @@ class PreProcessConfig(object):
     NUMBER_REMOVAL = True  # hand search
     # w2v training  # hand search
     # for WORD_DIM see ModelConfig
-    W2V_ALGORITHM_CBOW = 1 # 1 for C-BOW, 0 for skip-gram
+    W2V_ALGORITHM_CBOW = 0 # 1 for C-BOW, 0 for skip-gram
     W2V_WIN_SIZE = 8
     W2V_ITER = 15
     W2V_NEG_SAMP = 25
@@ -71,12 +71,12 @@ class ModelConfig(object):
     SORT_INSTANCE = False
     PAD_WIDE = True
     # network config
-    FEATURE_MAP_NUM = 100
-    CONV_FILTER_LEN = 5
+    FEATURE_MAP_NUM = 50
+    CONV_FILTER_LEN = 1
     MAX_SENT_LEN = 300
     # train config
-    BATCH_SIZE = 50
-    TRAIN_EPOCH = 1
+    BATCH_SIZE = 32
+    TRAIN_EPOCH = 10
     LOSS_FUNC = 'binary_crossentropy'
     OPT = 'adadelta'
     
